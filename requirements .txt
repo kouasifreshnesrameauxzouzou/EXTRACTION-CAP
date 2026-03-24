@@ -1,7 +1,6 @@
  
-pyodbc
-streamlit
-pandas
-pymssql
-openpyxl
-xlsxwriter
+streamlit>=1.32.0
+pandas>=2.0.0
+python-tds>=1.17.1
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
