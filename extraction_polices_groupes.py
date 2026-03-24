@@ -7,7 +7,7 @@
 
 import streamlit as st
 import pandas as pd
-import pytds
+import pymssql
 import io
 from datetime import datetime
 
@@ -326,29 +326,20 @@ COLONNES_SORTIE = [
 # ─────────────────────────────────────────────────────────────────
 
 def get_connection(server: str, database: str, username: str, password: str):
-    """Établit une connexion SQL Server via pytds (pur Python, sans ODBC)."""
-    # Séparer host et port/instance si format HOST\INSTANCE ou HOST,PORT
+    """Établit une connexion SQL Server via pymssql + FreeTDS."""
+    # Séparer host et instance si format HOST\INSTANCE
     host = server
-    port = 1433
     if "\\" in server:
         host = server.split("\\")[0]
-    elif "," in server:
-        parts = server.split(",")
-        host = parts[0].strip()
-        try:
-            port = int(parts[1].strip())
-        except (ValueError, IndexError):
-            pass
 
-    return pytds.connect(
-        dsn=host,
-        port=port,
-        database=database,
+    return pymssql.connect(
+        server=host,
         user=username,
         password=password,
-        as_dict=True,
+        database=database,
         timeout=60,
         login_timeout=30,
+        as_dict=True,
     )
 
 
