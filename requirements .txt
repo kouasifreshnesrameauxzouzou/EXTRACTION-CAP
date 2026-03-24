@@ -4,16 +4,16 @@
 # ─────────────────────────────────────────────────────────────────
 
 # Interface web
-streamlit==1.55.0
+streamlit
 
 # Manipulation de données
-pandas==3.0.1
+pandas
 
 # Connexion SQL Server (requiert ODBC Driver 17 installé sur le poste)
-pyodbc==5.3.0
+pyodbc
 
 # Lecture Excel (import fichier conventions)
-openpyxl==3.1.5
+openpyxl
 
 # Écriture Excel stylisé (export résultat)
-xlsxwriter==3.2.9
+xlsxwriter
