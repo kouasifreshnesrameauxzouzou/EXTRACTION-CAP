@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import pyodbc
+import pytds
 import io
 from datetime import datetime
 
@@ -71,25 +71,27 @@ if st.button("🚀 Lancer l'extraction", type="primary", use_container_width=Tru
     ORDER BY P.JPPOLIP_WNPLAN, P.JPPOLIP_WNUPO, NOM_ASSURE
     """
     try:
-        with st.spinner("Connexion à SQL Server via FreeTDS..."):
-            conn_str = (
-                "DRIVER={FreeTDS};"
-                f"SERVER={server};"
-                "PORT=1433;"
-                f"DATABASE={database};"
-                f"UID={username};"
-                f"PWD={password};"
-                "TDS_Version=7.4;"
+        with st.spinner("Connexion à SQL Server..."):
+            conn = pytds.connect(
+                server=server,
+                database=database,
+                user=username,
+                password=password,
+                as_dict=True,
+                timeout=120,
+                login_timeout=30,
             )
-            conn = pyodbc.connect(conn_str, timeout=30)
 
         with st.spinner("Exécution de la requête SQL..."):
-            df = pd.read_sql(SQL, conn)
+            with conn.cursor() as cur:
+                cur.execute(SQL)
+                rows = cur.fetchall()
             conn.close()
 
-        if df.empty:
+        if not rows:
             st.warning("⚠️ Aucune donnée trouvée pour ces conventions.")
         else:
+            df = pd.DataFrame(rows)
             st.success(f"✅ **{len(df):,} lignes** extraites — {df['NUMERO_CONVENTION'].nunique()} convention(s)")
             st.dataframe(df.head(50), use_container_width=True)
 
