@@ -1,14 +1,6 @@
-# Interface web
+
 streamlit
- 
-# Manipulation de données
 pandas
- 
-# Connexion SQL Server — pur Python, fonctionne sur Streamlit Cloud
-pymssql
- 
-# Lecture Excel (import fichier conventions)
+python-tds
 openpyxl
- 
-# Écriture Excel stylisé (export résultat)
 xlsxwriter
