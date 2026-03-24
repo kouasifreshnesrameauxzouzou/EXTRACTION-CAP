@@ -1,4 +1,5 @@
  
+pyodbc
 streamlit
 pandas
 pymssql
