@@ -1,6 +1,6 @@
-
+ 
 streamlit
 pandas
-python-tds
+pymssql
 openpyxl
 xlsxwriter
