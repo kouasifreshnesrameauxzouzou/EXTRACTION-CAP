@@ -1,0 +1,19 @@
+# ─────────────────────────────────────────────────────────────────
+# NSIA Vie — Extraction Polices Groupes
+# Requirements Python · Testé sur Python 3.12
+# ─────────────────────────────────────────────────────────────────
+
+# Interface web
+streamlit==1.55.0
+
+# Manipulation de données
+pandas==3.0.1
+
+# Connexion SQL Server (requiert ODBC Driver 17 installé sur le poste)
+pyodbc==5.3.0
+
+# Lecture Excel (import fichier conventions)
+openpyxl==3.1.5
+
+# Écriture Excel stylisé (export résultat)
+xlsxwriter==3.2.9
