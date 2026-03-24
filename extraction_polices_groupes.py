@@ -7,7 +7,7 @@
 
 import streamlit as st
 import pandas as pd
-import pymssql
+import pytds
 import io
 from datetime import datetime
 
@@ -325,24 +325,43 @@ COLONNES_SORTIE = [
 # FONCTIONS UTILITAIRES
 # ─────────────────────────────────────────────────────────────────
 
-def get_connection(server: str, database: str, username: str, password: str) -> pymssql.Connection:
-    """Établit une connexion SQL Server via pymssql."""
-    # Séparer host et instance si format HOST\INSTANCE
+def get_connection(server: str, database: str, username: str, password: str):
+    """Établit une connexion SQL Server via pytds (pur Python, sans ODBC)."""
+    # Séparer host et port/instance si format HOST\INSTANCE ou HOST,PORT
+    host = server
+    port = 1433
     if "\\" in server:
-        host, instance = server.split("\\", 1)
-    else:
-        host, instance = server, None
+        host = server.split("\\")[0]
+    elif "," in server:
+        parts = server.split(",")
+        host = parts[0].strip()
+        try:
+            port = int(parts[1].strip())
+        except (ValueError, IndexError):
+            pass
 
-    return pymssql.connect(
-        server=host,
-        instance=instance if instance else "",
+    return pytds.connect(
+        dsn=host,
+        port=port,
+        database=database,
         user=username,
         password=password,
-        database=database,
+        as_dict=True,
         timeout=60,
         login_timeout=30,
-        tds_version="7.4",
     )
+
+
+def run_extraction(conn, conventions: list) -> pd.DataFrame:
+    """Exécute la requête SQL et retourne un DataFrame."""
+    placeholders = ", ".join(str(c) for c in conventions)
+    sql = SQL_TEMPLATE.format(placeholders=placeholders)
+    with conn.cursor() as cursor:
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        if not rows:
+            return pd.DataFrame(columns=COLONNES_SORTIE)
+        return pd.DataFrame(rows)
 
 
 def read_conventions_from_excel(uploaded_file) -> list[int]:
@@ -379,13 +398,6 @@ def read_conventions_from_excel(uploaded_file) -> list[int]:
     nums = nums[nums.str.match(r"^\d+$")]
     return sorted(set(int(x) for x in nums))
 
-
-def run_extraction(conn: pyodbc.Connection, conventions: list[int]) -> pd.DataFrame:
-    """Exécute la requête SQL et retourne un DataFrame."""
-    placeholders = ", ".join(str(c) for c in conventions)
-    sql = SQL_TEMPLATE.format(placeholders=placeholders)
-    df = pd.read_sql(sql, conn)
-    return df
 
 
 def to_excel_bytes(df: pd.DataFrame, sheet_conventions: list[int]) -> bytes:
