@@ -7,7 +7,7 @@
 
 import streamlit as st
 import pandas as pd
-import pyodbc
+import pymssql
 import io
 from datetime import datetime
 
@@ -325,18 +325,24 @@ COLONNES_SORTIE = [
 # FONCTIONS UTILITAIRES
 # ─────────────────────────────────────────────────────────────────
 
-def get_connection(server: str, database: str, username: str, password: str, driver: str) -> pyodbc.Connection:
-    """Établit une connexion SQL Server via pyodbc."""
-    conn_str = (
-        f"DRIVER={{{driver}}};"
-        f"SERVER={server};"
-        f"DATABASE={database};"
-        f"UID={username};"
-        f"PWD={password};"
-        "TrustServerCertificate=yes;"
-        "Connection Timeout=30;"
+def get_connection(server: str, database: str, username: str, password: str) -> pymssql.Connection:
+    """Établit une connexion SQL Server via pymssql."""
+    # Séparer host et instance si format HOST\INSTANCE
+    if "\\" in server:
+        host, instance = server.split("\\", 1)
+    else:
+        host, instance = server, None
+
+    return pymssql.connect(
+        server=host,
+        instance=instance if instance else "",
+        user=username,
+        password=password,
+        database=database,
+        timeout=60,
+        login_timeout=30,
+        tds_version="7.4",
     )
-    return pyodbc.connect(conn_str)
 
 
 def read_conventions_from_excel(uploaded_file) -> list[int]:
@@ -556,19 +562,6 @@ with st.sidebar:
     username = st.text_input("Identifiant", value="reportdata")
     password = st.text_input("Mot de passe", value="reportdata$2025", type="password")
 
-    drivers = []
-    try:
-        drivers = [d for d in pyodbc.drivers() if "SQL Server" in d]
-    except Exception:
-        pass
-
-    if drivers:
-        # Préselectionner ODBC Driver 17 si disponible
-        default_idx = next((i for i, d in enumerate(drivers) if "17" in d), 0)
-        driver = st.selectbox("Driver ODBC", options=drivers, index=default_idx)
-    else:
-        driver = st.text_input("Driver ODBC", value="ODBC Driver 17 for SQL Server")
-
     st.markdown("<hr style='border-color: rgba(201,168,76,0.2); margin: 16px 0;'>", unsafe_allow_html=True)
 
     # Test de connexion
@@ -578,7 +571,7 @@ with st.sidebar:
         else:
             try:
                 with st.spinner("Connexion..."):
-                    conn = get_connection(server, database, username, password, driver)
+                    conn = get_connection(server, database, username, password)
                     conn.close()
                 st.success("✅ Connexion réussie !")
             except Exception as e:
@@ -765,7 +758,7 @@ if run_btn:
     try:
         # Connexion
         progress_bar.progress(15, text="Connexion au serveur SQL...")
-        conn = get_connection(server, database, username, password, driver)
+        conn = get_connection(server, database, username, password)
 
         # Exécution SQL
         progress_bar.progress(40, text="Exécution de la requête SQL (peut prendre plusieurs secondes)...")
